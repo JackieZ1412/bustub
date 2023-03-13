@@ -42,16 +42,7 @@ void LRUReplacer::Pin(frame_id_t frame_id) {
     return;
 }
 
-void LRUReplacer::Unpin(frame_id_t frame_id) {
-    std::lock_guard<std::mutex> lock(lash);
-    if(pos.count(frame_id) > 0){
-        return;
-    }
-    frame_list.push_back(pos[frame_id]);
-    pos_[frame_id] = prev(frame_list.end());
-    std::lock_guard<std::mutex> unlock(lash);
-    return;
-}
+void LRUReplacer::Unpin(frame_id_t frame_id) {}
 
 auto LRUReplacer::Size() -> size_t { return frame_list.size(); }
 

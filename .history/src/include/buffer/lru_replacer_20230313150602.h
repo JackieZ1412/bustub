@@ -13,9 +13,8 @@
 #pragma once
 
 #include <list>
-#include <mutex>
+#include <mutex>  // NOLINT
 #include <vector>
-#include <unordered_map>
 
 #include "buffer/replacer.h"
 #include "common/config.h"
@@ -49,9 +48,7 @@ class LRUReplacer : public Replacer {
  private:
   // TODO(student): implement me!
   std::list<frame_id_t> frame_list;
-  std::unordered_map<frame_id_t, std::list<frame_id_t>::iterator> pos;
-  std::mutex lash;
-  // size_t num_of_frames;
+  size_t num_of_frames;
 };
 
 }  // namespace bustub
