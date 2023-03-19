@@ -21,8 +21,6 @@
 #include "common/config.h"
 #include "common/macros.h"
 
-// const size_t inf = 0x7fffffff;
-
 namespace bustub {
 
 enum class AccessType { Unknown = 0, Get, Scan };

@@ -20,12 +20,9 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_fra
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool { 
     latch_.lock();
     bool exist = false;
-    LRUKNode node = (*(node_store_.begin())).second;
-    bool is_inf = (node.history_.size() < k_);
+    LRUKNode node = *(node_store_.begin());
     for(auto p: node_store_){
-        LRUKNode cur_node = p.second;
-        bool cur_is_inf = (cur_node.history_.size() < k_);
-        if(is_inf && )
+
     }
     latch_.unlock();
     return false; 

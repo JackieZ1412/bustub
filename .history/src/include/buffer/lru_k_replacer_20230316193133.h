@@ -21,7 +21,7 @@
 #include "common/config.h"
 #include "common/macros.h"
 
-// const size_t inf = 0x7fffffff;
+const size_t inf = 0x7fffffff;
 
 namespace bustub {
 

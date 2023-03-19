@@ -198,19 +198,7 @@ void BufferPoolManager::FlushAllPages() {
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { 
   latch_.lock();
   bool in = (page_table_.find(page_id) != page_table_.end());
-  if(!in){
-    latch_.unlock();
-    return true;
-  }
-  if(pages_[page_id].GetPinCount() > 0){
-    latch_.unlock();
-    return false;
-  }
-  frame_id_t frame_id = page_table_[page_id];
-  page_table_.erase(page_id);
-  pages_[frame_id].ResetMemory();
-  free_list_.push_back(frame_id);
-  DeallocatePage(page_id);
+  
   latch_.unlock();
   return false; 
 }

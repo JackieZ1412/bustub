@@ -150,43 +150,17 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unus
   }
   frame_id_t frame_id = page_table_[page_id];
   pages_[frame_id].pin_count_--;
-  if(is_dirty){
-    pages_[frame_id].is_dirty_ = true;
-  }
   if(pages_[frame_id].GetPinCount() == 0){
     // the page is evictable by the replacer
     replacer_->Unpin(frame_id);
   }
+
   latch_.unlock();
   return true;
 }
 
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool { 
-  assert(page_id != INVALID_PAGE_ID);
-  latch_.lock();
-  bool in = (page_table_.find(page_id) != page_table_.end());
-  if(!in){
-    latch_.unlock();
-    return false;
-  } 
-  frame_id_t frame_id = page_table_[page_id];
-  if(frame_id == INVALID_PAGE_ID){
-    latch_.unlock();
-    return false;
-  }
-  disk_manager_->WritePage(page_id,pages_[frame_id].GetData());
-  pages_[frame_id].is_dirty_ = false;
-  // for(auto it = page_table_.begin();it != page_table_.end();it++){
-  //   if((*it).second == frame_id){
-  //     page_table_.erase(it);
-  //     break;
-  //   }
-  // }
-  page_table_.erase(page_id);
-  free_list_.push_back(frame_id);
-  replacer_->Pin(frame_id);
-  latch_.unlock();
-  return true; 
+  return false; 
 }
 
 void BufferPoolManager::FlushAllPages() {
@@ -195,25 +169,7 @@ void BufferPoolManager::FlushAllPages() {
   }
 }
 
-auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { 
-  latch_.lock();
-  bool in = (page_table_.find(page_id) != page_table_.end());
-  if(!in){
-    latch_.unlock();
-    return true;
-  }
-  if(pages_[page_id].GetPinCount() > 0){
-    latch_.unlock();
-    return false;
-  }
-  frame_id_t frame_id = page_table_[page_id];
-  page_table_.erase(page_id);
-  pages_[frame_id].ResetMemory();
-  free_list_.push_back(frame_id);
-  DeallocatePage(page_id);
-  latch_.unlock();
-  return false; 
-}
+auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { return false; }
 
 auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 

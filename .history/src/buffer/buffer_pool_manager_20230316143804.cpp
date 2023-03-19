@@ -150,12 +150,12 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unus
   }
   frame_id_t frame_id = page_table_[page_id];
   pages_[frame_id].pin_count_--;
-  if(is_dirty){
-    pages_[frame_id].is_dirty_ = true;
-  }
   if(pages_[frame_id].GetPinCount() == 0){
     // the page is evictable by the replacer
     replacer_->Unpin(frame_id);
+  }
+  if(is_dirty){
+    pages_[frame_id] = true;
   }
   latch_.unlock();
   return true;
@@ -197,20 +197,7 @@ void BufferPoolManager::FlushAllPages() {
 
 auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { 
   latch_.lock();
-  bool in = (page_table_.find(page_id) != page_table_.end());
-  if(!in){
-    latch_.unlock();
-    return true;
-  }
-  if(pages_[page_id].GetPinCount() > 0){
-    latch_.unlock();
-    return false;
-  }
-  frame_id_t frame_id = page_table_[page_id];
-  page_table_.erase(page_id);
-  pages_[frame_id].ResetMemory();
-  free_list_.push_back(frame_id);
-  DeallocatePage(page_id);
+
   latch_.unlock();
   return false; 
 }

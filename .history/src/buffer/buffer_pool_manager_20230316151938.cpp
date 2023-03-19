@@ -210,7 +210,7 @@ auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
   page_table_.erase(page_id);
   pages_[frame_id].ResetMemory();
   free_list_.push_back(frame_id);
-  DeallocatePage(page_id);
+  
   latch_.unlock();
   return false; 
 }

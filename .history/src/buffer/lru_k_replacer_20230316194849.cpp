@@ -21,6 +21,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     latch_.lock();
     bool exist = false;
     LRUKNode node = (*(node_store_.begin())).second;
+    std::list<size_t> lis = node.history_;
     bool is_inf = (node.history_.size() < k_);
     for(auto p: node_store_){
         LRUKNode cur_node = p.second;

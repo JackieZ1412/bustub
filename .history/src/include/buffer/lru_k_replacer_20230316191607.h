@@ -21,8 +21,6 @@
 #include "common/config.h"
 #include "common/macros.h"
 
-// const size_t inf = 0x7fffffff;
-
 namespace bustub {
 
 enum class AccessType { Unknown = 0, Get, Scan };
@@ -35,7 +33,7 @@ class LRUKNode {
   std::list<size_t> history_;
   size_t k_;
   frame_id_t fid_;
-  size_t LRUK_dis;
+  size_t last_visited;
   bool is_evictable_{false};
 };
 
