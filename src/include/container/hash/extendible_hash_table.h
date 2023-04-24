@@ -151,7 +151,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
      * @brief Insert the given key-value pair into the bucket.
      *      1. If a key already exists, the value should be updated.
      *      2. If the bucket is full, do nothing and return false.
-     * @param key The key to be inserted.
+     * @param key The key to be inserted.size_
      * @param value The value to be inserted.
      * @return True if the key-value pair is inserted, false otherwise.
      */
@@ -192,6 +192,7 @@ class ExtendibleHashTable : public HashTable<K, V> {
    * @return The entry index in the directory.
    */
   auto IndexOf(const K &key) -> size_t;
+  auto IndexOf(const K &key,const int &depth) -> size_t;
 
   auto GetGlobalDepthInternal() const -> int;
   auto GetLocalDepthInternal(int dir_index) const -> int;

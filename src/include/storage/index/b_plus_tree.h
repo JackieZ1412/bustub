@@ -45,6 +45,8 @@ class BPlusTree {
   // Returns true if this B+ tree has no keys and values.
   auto IsEmpty() const -> bool;
 
+  // auto Insert_in_leaf(const LeafPage *leaf, const KeyType &key, const ValueType &value) -> bool;
+
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
@@ -74,13 +76,40 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
+  Page *FindLeafPage(const KeyType &key, bool leftMost, bool rightMost,int op, Transaction *transaction);
+ 
+ 
  private:
+  void StartNewTree(const KeyType &key, const ValueType &value);
+
+  bool InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
+
+  void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
+                        Transaction *transaction = nullptr);
+
+  template <typename N>
+  N *Split(N *node);
+
+  template <typename N>
+  bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
+
+  template <typename N>
+  bool Coalesce(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent,
+                int index, Transaction *transaction = nullptr);
+
+  template <typename N>
+  void Redistribute(N *neighbor_node, N *node, 
+                                  BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent,int index);
+
+  bool AdjustRoot(BPlusTreePage *node);
   void UpdateRootPageId(int insert_record = 0);
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
+
+  void TopDownRelease(Transaction *transaction);
 
   // member variable
   std::string index_name_;
@@ -89,6 +118,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  ReaderWriterLatch root_latch_;
 };
 
 }  // namespace bustub

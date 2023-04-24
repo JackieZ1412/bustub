@@ -87,7 +87,7 @@ class BufferPoolManager {
   /** @return size of the buffer pool */
   virtual auto GetPoolSize() -> size_t = 0;
 
- protected:
+ // protected:
   /**
    * Grading function. Do not modify!
    * Invokes the callback function if it is not null.
