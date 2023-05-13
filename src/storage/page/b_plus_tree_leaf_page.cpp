@@ -58,7 +58,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
 
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const { 
-  LOG_DEBUG("Enter key index function");
+  // LOG_DEBUG("Enter key index function");
   auto target = std::lower_bound(array_, array_ + GetSize(), key, [&comparator](const auto &pair, auto k) {
     return comparator(pair.first, k) < 0;
   });
@@ -73,7 +73,7 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> int {
-  LOG_DEBUG("Enter insert in b plus tree leaf page");
+  // LOG_DEBUG("Enter insert in b plus tree leaf page");
   int idx = KeyIndex(key,comparator); //first larger than key
   assert(idx >= 0);
   IncreaseSize(1);
@@ -90,46 +90,46 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &val
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   // TODO: Implement after Copy function
-  LOG_DEBUG("Enter move half to function in leaf page");
+  // LOG_DEBUG("Enter move half to function in leaf page");
   int start_split_indx = GetMinSize();
   SetSize(start_split_indx);
   recipient->CopyNFrom(array_ + start_split_indx, GetMaxSize() - start_split_indx);
-  LOG_DEBUG("Finished move half");
+  // LOG_DEBUG("Finished move half");
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
-  LOG_DEBUG("Copy N function from leaf page");
+  // LOG_DEBUG("Copy N function from leaf page");
   std::copy(items, items + size, array_ + GetSize());
   IncreaseSize(size);
-  LOG_DEBUG("finish copy N from leaf page");
+  // LOG_DEBUG("finish copy N from leaf page");
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const {
-  LOG_DEBUG("Enter lookup function in b plus tree leaf page");
+  // LOG_DEBUG("Enter lookup function in b plus tree leaf page");
   for(int i = 0;i < GetSize();i++){
     if(comparator(key,array_[i].first) == 0){
-      LOG_DEBUG("Successfully found with index %d",i);
+      // LOG_DEBUG("Successfully found with index %d",i);
       *value = array_[i].second;
       return true;
     }
   }
-  LOG_DEBUG("Didn't found ");
+  // LOG_DEBUG("Didn't found ");
   return false;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) { 
-  LOG_DEBUG("Enter RemoveAndDeleteRecord function in b plus tree leaf page");
+  // LOG_DEBUG("Enter RemoveAndDeleteRecord function in b plus tree leaf page");
   int index = KeyIndex(key,comparator);
-  LOG_DEBUG("The index is %d",index);
-  std::cout << "The two params are " << array_[index].first << " and " << key << std::endl;
+  // LOG_DEBUG("The index is %d",index);
+  // std::cout << "The two params are " << array_[index].first << " and " << key << std::endl;
   if(index == GetSize() || comparator(array_[index].first, key) != 0){
-    LOG_DEBUG("Didn't found");
+    // LOG_DEBUG("Didn't found");
     return GetSize();
   }
-  LOG_DEBUG("Key found");
+  // LOG_DEBUG("Key found");
   std::move(array_ + index + 1,array_ + GetSize(),array_ + index);
   IncreaseSize(-1);
   return GetSize();

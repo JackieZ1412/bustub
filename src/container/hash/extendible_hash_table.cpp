@@ -80,12 +80,12 @@ auto ExtendibleHashTable<K, V>::GetNumBucketsInternal() const -> int {
 template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Find(const K &key, V &value) -> bool {
   // UNREACHABLE("not implemented");
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
   // LOG_DEBUG("Enter Hash Table Find");
   size_t index = IndexOf(key);
   bool in = dir_[index]->Find(key,value);
   // LOG_DEBUG("Quit Hash Table Find");
-  latch_.unlock();
+  // latch_.unlock();
   return in;
 }
 
@@ -93,73 +93,68 @@ template <typename K, typename V>
 auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
   // UNREACHABLE("not implemented");
   // LOG_DEBUG("Enter Hash table Remove");
-  latch_.lock();
+  std::scoped_lock<std::mutex> lock(latch_);
   size_t index = IndexOf(key);
   bool in = dir_[index]->Remove(key);
   // LOG_DEBUG("Quit Hash table remove");
-  latch_.unlock();
+  // latch_.unlock();
   return in;
 }
 
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
-  // UNREACHABLE("not implemented");
-  latch_.lock();
-  // LOG_DEBUG("Enter Hash Table Insert");
-  // LOG_DEBUG("check all the buckets");
-  size_t index = IndexOf(key);
-  // LOG_DEBUG("Quit IndexOf");
-  // LOG_DEBUG("Ready to enter bucket insert");
-  bool isfull = dir_[index]->IsFull();
-  if(!isfull){
-    // LOG_DEBUG("The bucket is not full");
-    dir_[index]->Insert(key,value);
-    latch_.unlock();
-    return;
-  }
-  // bool succ = dir_[index]->Insert(key,value);
-  if(isfull){
-    // LOG_DEBUG("Bucket Insert failed");
-    int depth = dir_[index]->GetDepth();
-    if(depth == global_depth_){
-      // LOG_DEBUG("Need add up global depth");
-      // global_depth_++;
-      size_t dir_size = dir_.size();
-      // LOG_DEBUG("Resize the dir");
-      dir_.resize(dir_size * 2);
-      // LOG_DEBUG("The dir size and double dir size are: %ld %ld",dir_size,2*dir_size);
-      for(size_t i = dir_size; i < dir_size * 2;i++){
-        //// LOG_DEBUG("Is this your fault?");
-        dir_[i] = dir_[i & ~(1 << global_depth_)];
-      }
+  std::scoped_lock<std::mutex> lock(latch_);
+
+  while (dir_[IndexOf(key)]->IsFull()) {
+    auto index = IndexOf(key);
+    auto target_bucket = dir_[index];
+
+    if (target_bucket->GetDepth() == GetGlobalDepthInternal()) {
       global_depth_++;
-    } else {
-      index = IndexOf(key, depth);
+      int capacity = dir_.size();
+      dir_.resize(capacity << 1);
+      for (int i = 0; i < capacity; i++) {
+        dir_[i + capacity] = dir_[i];
+      }
     }
-    // get a new bucket
-    // LOG_DEBUG("Get a new bucket");
-    size_t new_index = index | (1 << depth);
-    dir_[new_index] = std::make_shared<Bucket>(bucket_size_,++depth);
-    dir_[index]->IncrementDepth();
+
+    int mask = 1 << target_bucket->GetDepth();
+    auto bucket_0 = std::make_shared<Bucket>(bucket_size_, target_bucket->GetDepth() + 1);
+    auto bucket_1 = std::make_shared<Bucket>(bucket_size_, target_bucket->GetDepth() + 1);
+
+    for (const auto &item : target_bucket->GetItems()) {
+      size_t hash_key = std::hash<K>()(item.first);
+      if ((hash_key & mask) != 0U) {
+        bucket_1->Insert(item.first, item.second);
+      } else {
+        bucket_0->Insert(item.first, item.second);
+      }
+    }
+
     num_buckets_++;
+
     for (size_t i = 0; i < dir_.size(); i++) {
-      if ((i & ~(1 << depth)) == new_index) {
-        dir_[i] = dir_[new_index];
+      if (dir_[i] == target_bucket) {
+        if ((i & mask) != 0U) {
+          dir_[i] = bucket_1;
+        } else {
+          dir_[i] = bucket_0;
+        }
       }
     }
-    // LOG_DEBUG("Remove the items in the old bucket to the new bucket");
-    auto items = dir_[index]->GetItems();
-    for(auto &item: items){
-      size_t n_idx = IndexOf(item.first, depth);
-      if(n_idx != index){
-        dir_[index]->Remove(item.first);
-        dir_[n_idx]->Insert(item.first,item.second);
-      }
-    }
-    latch_.unlock();
-    // LOG_DEBUG("Ready to insert new items");
-    Insert(key, value);
   }
+
+  auto index = IndexOf(key);
+  auto target_bucket = dir_[index];
+
+  for (auto &item : target_bucket->GetItems()) {
+    if (item.first == key) {
+      item.second = value;
+      return;
+    }
+  }
+
+  target_bucket->Insert(key, value);
 }
 
 //===--------------------------------------------------------------------===//

@@ -65,14 +65,14 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { ret
 
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const { 
-  LOG_DEBUG("ValueIndex function in b plus tree internal page");
+  // LOG_DEBUG("ValueIndex function in b plus tree internal page");
   for(int i = 0;i < GetSize();i++){
     if(value == array_[i].second){
-      LOG_DEBUG("Found value at index %d",i);
+      // LOG_DEBUG("Found value at index %d",i);
       return i;
     }
   }
-  LOG_DEBUG("didn't find");
+  // LOG_DEBUG("didn't find");
   return GetSize();
 }
 
@@ -105,7 +105,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                     const ValueType &new_value) -> int {
-  LOG_DEBUG("InsertNodeAfter function in b plus tree internal page");
+  // LOG_DEBUG("InsertNodeAfter function in b plus tree internal page");
   int index = ValueIndex(old_value);
   std::move_backward(array_ + index + 1, array_ + GetSize(), array_ + GetSize() + 1);
   array_[index + 1].first = new_key;
@@ -118,28 +118,28 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
                                                 BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("Move half to function in b plus tree internal page");
+  // LOG_DEBUG("Move half to function in b plus tree internal page");
   int min_size = GetMinSize();
   int size = GetSize();
   recipient->CopyNFrom(array_ + min_size, size - min_size, buffer_pool_manager);
-  LOG_DEBUG("Successfully Copy N and ready to set size");
+  // LOG_DEBUG("Successfully Copy N and ready to set size");
   SetSize(min_size);
 }
 
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("Enter CopyNFrom function in b plus tree internal page");
+  // LOG_DEBUG("Enter CopyNFrom function in b plus tree internal page");
   std::copy(items,items + size, array_ + GetSize());
   for(int i = 0;i < size;i++){
     auto page = buffer_pool_manager->FetchPgImp(ValueAt(i + GetSize()));
-    LOG_DEBUG("This page id %d",page->GetPageId());
+    // LOG_DEBUG("This page id %d",page->GetPageId());
     auto *node = reinterpret_cast<BPlusTreePage *>(page->GetData());
     node->SetParentPageId(GetPageId());
     buffer_pool_manager->UnpinPage(page->GetPageId(), true);
   }
   IncreaseSize(size);
-  LOG_DEBUG("Now the size is %d",GetSize());
+  // LOG_DEBUG("Now the size is %d",GetSize());
 }
 
 
@@ -161,7 +161,7 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() {
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("MoveAllTo function in b plus tree internal page");
+  // LOG_DEBUG("MoveAllTo function in b plus tree internal page");
   SetKeyAt(0,middle_key);
   recipient->CopyNFrom(array_, GetSize(), buffer_pool_manager);
   SetSize(0);
@@ -171,7 +171,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient,
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                       BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("MoveFirstToEndOf function in b plus tree internal page");
+  // LOG_DEBUG("MoveFirstToEndOf function in b plus tree internal page");
   SetKeyAt(0,middle_key);
   auto item = array_[0];
   recipient->CopyLastFrom(item, buffer_pool_manager);
@@ -182,7 +182,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *rec
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("CopyLastFrom function in b plus tree internal page");
+  // LOG_DEBUG("CopyLastFrom function in b plus tree internal page");
   *(array_ + GetSize()) = pair;
   IncreaseSize(1);
   auto page = buffer_pool_manager->FetchPgImp(pair.second);
@@ -195,7 +195,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, Buffe
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                        BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("MoveLastToFrontOf function in b plus tree internal page");
+  // LOG_DEBUG("MoveLastToFrontOf function in b plus tree internal page");
   SetKeyAt(GetSize() - 1,middle_key);
   auto item = array_[GetSize() - 1];
   recipient->CopyFirstFrom(item, buffer_pool_manager);
@@ -205,7 +205,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
-  LOG_DEBUG("CopyFirstFrom function in b plus tree internal page");
+  // LOG_DEBUG("CopyFirstFrom function in b plus tree internal page");
   std::move(array_, array_ + GetSize(), array_ + 1);
   IncreaseSize(1);
   // SetValueAt(0,pair);
