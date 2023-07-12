@@ -408,13 +408,6 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
 }
 
 void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
-  txn_set_.insert(t1);
-  txn_set_.insert(t2);
-  txn_vec_.emplace_back(t1);
-  txn_vec_.emplace_back(t2);
-  if(find(txn_vec_.begin(), txn_vec_.end(),t2) != waits_for_[t1].end()){
-    return;
-  }
   waits_for_[t1].push_back(t2);
 }
 
@@ -428,8 +421,7 @@ void LockManager::RemoveEdge(txn_id_t t1, txn_id_t t2) {
 auto LockManager::HasCycle(txn_id_t *txn_id) -> bool { 
   std::unordered_set<txn_id_t> visited;
   std::stack<txn_id_t> txn_stack;
-  sort(txn_vec_.begin(), txn_vec_.end());
-  for(auto start_txn: txn_vec_){
+  for(auto &start_txn: txn_set_){
     if(visited.find(start_txn) != visited.end()){
       // get a cycle
       *txn_id = *visited.begin();
@@ -443,7 +435,7 @@ auto LockManager::HasCycle(txn_id_t *txn_id) -> bool {
       auto temp = txn_stack.top();
       txn_stack.pop();
       visited.insert(temp);
-      for(auto next: waits_for_[temp]){
+      for(auto &next: waits_for_[temp]){
         if(visited.find(next) == visited.end()){
           txn_stack.push(next);
         } else {
@@ -476,71 +468,6 @@ void LockManager::RunCycleDetection() {
   while (enable_cycle_detection_) {
     std::this_thread::sleep_for(cycle_detection_interval);
     {  // TODO(students): detect deadlock
-      table_lock_map_latch_.lock();
-      row_lock_map_latch_.lock();
-      for(auto &pair: table_lock_map_){
-        std::unordered_set<txn_id_t> grant_set;
-        pair.second->latch_.lock();
-        for (auto const &lock_request : pair.second->request_queue_) {
-          if (lock_request->granted_) {
-            grant_set.emplace(lock_request->txn_id_);
-          } else {
-            for (auto txn_id : grant_set) {
-              map_txn_oid_.emplace(lock_request->txn_id_, lock_request->oid_);
-              AddEdge(lock_request->txn_id_, txn_id);
-            }
-          }
-        }
-        pair.second->latch_.unlock();
-      for (auto &pair : row_lock_map_) {
-        std::unordered_set<txn_id_t> granted_set;
-        pair.second->latch_.lock();
-        for (auto const &lock_request : pair.second->request_queue_) {
-          if (lock_request->granted_) {
-            granted_set.emplace(lock_request->txn_id_);
-          } else {
-            for (auto txn_id : granted_set) {
-              map_txn_rid_.emplace(lock_request->txn_id_, lock_request->rid_);
-              AddEdge(lock_request->txn_id_, txn_id);
-            }
-          }
-        }
-        pair.second->latch_.unlock();
-      }
-
-      row_lock_map_latch_.unlock();
-      table_lock_map_latch_.unlock();
-
-      txn_id_t txn_id;
-      while (HasCycle(&txn_id)) {
-        Transaction *txn = TransactionManager::GetTransaction(txn_id);
-        txn->SetState(TransactionState::ABORTED);
-        waits_for_.erase(txn_id);
-        for (auto temp: txn_set_){
-          if(temp != txn_id){
-            RemoveEdge(temp,txn_id);
-          }
-        }
-
-        if (map_txn_oid_.count(txn_id) > 0) {
-          table_lock_map_[map_txn_oid_[txn_id]]->latch_.lock();
-          table_lock_map_[map_txn_oid_[txn_id]]->cv_.notify_all();
-          table_lock_map_[map_txn_oid_[txn_id]]->latch_.unlock();
-        }
-
-        if (map_txn_rid_.count(txn_id) > 0) {
-          row_lock_map_[map_txn_rid_[txn_id]]->latch_.lock();
-          row_lock_map_[map_txn_rid_[txn_id]]->cv_.notify_all();
-          row_lock_map_[map_txn_rid_[txn_id]]->latch_.unlock();
-        }
-      }
-
-      waits_for_.clear();
-      // safe_set_.clear();
-      txn_set_.clear();
-      txn_vec_.clear();
-      map_txn_oid_.clear();
-      map_txn_rid_.clear();
     }
   }
 }

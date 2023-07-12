@@ -515,12 +515,7 @@ void LockManager::RunCycleDetection() {
       while (HasCycle(&txn_id)) {
         Transaction *txn = TransactionManager::GetTransaction(txn_id);
         txn->SetState(TransactionState::ABORTED);
-        waits_for_.erase(txn_id);
-        for (auto temp: txn_set_){
-          if(temp != txn_id){
-            RemoveEdge(temp,txn_id);
-          }
-        }
+        DeleteNode(txn_id);
 
         if (map_txn_oid_.count(txn_id) > 0) {
           table_lock_map_[map_txn_oid_[txn_id]]->latch_.lock();

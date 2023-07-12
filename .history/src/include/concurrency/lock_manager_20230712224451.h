@@ -331,9 +331,6 @@ class LockManager {
 
   std::unordered_set<txn_id_t> txn_set_;
   std::vector<txn_id_t> txn_vec_;
-
-  std::unordered_map<txn_id_t, RID> map_txn_rid_;
-  std::unordered_map<txn_id_t, table_oid_t> map_txn_oid_;
 };
 
 }  // namespace bustub

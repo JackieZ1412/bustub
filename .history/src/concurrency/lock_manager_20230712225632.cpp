@@ -408,11 +408,7 @@ auto LockManager::UnlockRow(Transaction *txn, const table_oid_t &oid, const RID 
 }
 
 void LockManager::AddEdge(txn_id_t t1, txn_id_t t2) {
-  txn_set_.insert(t1);
-  txn_set_.insert(t2);
-  txn_vec_.emplace_back(t1);
-  txn_vec_.emplace_back(t2);
-  if(find(txn_vec_.begin(), txn_vec_.end(),t2) != waits_for_[t1].end()){
+  if(waits_for_[ti].find(t2) != waits_for[ti].end()){
     return;
   }
   waits_for_[t1].push_back(t2);
@@ -515,12 +511,7 @@ void LockManager::RunCycleDetection() {
       while (HasCycle(&txn_id)) {
         Transaction *txn = TransactionManager::GetTransaction(txn_id);
         txn->SetState(TransactionState::ABORTED);
-        waits_for_.erase(txn_id);
-        for (auto temp: txn_set_){
-          if(temp != txn_id){
-            RemoveEdge(temp,txn_id);
-          }
-        }
+        DeleteNode(txn_id);
 
         if (map_txn_oid_.count(txn_id) > 0) {
           table_lock_map_[map_txn_oid_[txn_id]]->latch_.lock();
@@ -536,9 +527,8 @@ void LockManager::RunCycleDetection() {
       }
 
       waits_for_.clear();
-      // safe_set_.clear();
+      safe_set_.clear();
       txn_set_.clear();
-      txn_vec_.clear();
       map_txn_oid_.clear();
       map_txn_rid_.clear();
     }
